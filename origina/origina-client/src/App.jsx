@@ -32,11 +32,23 @@ function similarityClass(value) {
 }
 
 function App() {
+  const [authUser, setAuthUser] = useState(() => {
+    const raw = window.localStorage.getItem("origina_user");
+    return raw ? JSON.parse(raw) : null;
+  });
+  const [email, setEmail] = useState("student1@origina.local");
+  const [password, setPassword] = useState("password");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const [loading, setLoading] = useState(true);
   const [apiData, setApiData] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!authUser) {
+      return;
+    }
+
     async function checkApi() {
       try {
         setLoading(true);
@@ -58,7 +70,102 @@ function App() {
     }
 
     checkApi();
-  }, []);
+  }, [authUser]);
+
+  async function handleLogin(event) {
+    event.preventDefault();
+    setLoginLoading(true);
+    setLoginError("");
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Echec de connexion.");
+      }
+
+      setAuthUser(data.user);
+      window.localStorage.setItem("origina_user", JSON.stringify(data.user));
+    } catch (err) {
+      setLoginError(err.message || "Echec de connexion.");
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await fetch("/api/logout", { method: "POST" });
+    } catch {
+      // Ignore logout API errors in local demo mode.
+    }
+
+    window.localStorage.removeItem("origina_user");
+    setAuthUser(null);
+    setApiData(null);
+    setError(null);
+  }
+
+  if (!authUser) {
+    return (
+      <div className="login-page">
+        <div className="login-card">
+          <div className="login-brand">
+            <div className="brand-dot" />
+            <span>Origina</span>
+          </div>
+          <h1>Connexion</h1>
+          <p className="login-subtitle">
+            Accede au tableau de bord de detection de plagiat.
+          </p>
+
+          <form className="login-form" onSubmit={handleLogin}>
+            <label>
+              Email
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="votre@email.com"
+                required
+              />
+            </label>
+
+            <label>
+              Mot de passe
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="********"
+                required
+              />
+            </label>
+
+            {loginError && <p className="error">{loginError}</p>}
+
+            <button type="submit" disabled={loginLoading}>
+              {loginLoading ? "Connexion..." : "Se connecter"}
+            </button>
+          </form>
+
+          <div className="login-help">
+            <p>Comptes de test:</p>
+            <code>student1@origina.local / password</code>
+            <code>teacher@origina.local / password</code>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page">
@@ -75,6 +182,12 @@ function App() {
           <a href="#">Rapports</a>
           <a href="#">Parametres</a>
         </nav>
+        <div className="topbar-user">
+          <span>
+            {authUser.name} ({authUser.role})
+          </span>
+          <button onClick={handleLogout}>Deconnexion</button>
+        </div>
       </header>
 
       <main className="layout">

@@ -64,7 +64,7 @@ Le système ne se limite pas au texte brut. Il analyse:
 3. Validation humaine par le Chef de Département.
 4. Dépôt du document puis analyse de similarité.
 5. Comparaison avec internet, bases académiques et travaux antérieurs.
-6. Production du rapport et délibération (DA/VAR).
+6. Production du rapport et délibération (DA/VAR) en cas de resultat 10 a 25%.
 
 Si le thème est rejeté, le processus s'arrête.
 

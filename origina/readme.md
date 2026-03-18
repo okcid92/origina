@@ -1,8 +1,8 @@
-# PolyPlag
+# origina
 
 Système intégré de détection de plagiat et de gestion académique.
 
-PolyPlag est une solution web conçue pour garantir l'intégrité académique au sein des institutions d'enseignement supérieur (type IBAM/MIAGE). L'application couvre tout le cycle de vie d'un travail de recherche, de la validation du thème jusqu'à la délibération finale après analyse de similarité.
+origina est une solution web conçue pour garantir l'intégrité académique au sein des institutions d'enseignement supérieur (type IBAM/MIAGE). L'application couvre tout le cycle de vie d'un travail de recherche, de la validation du thème jusqu'à la délibération finale après analyse de similarité.
 
 ## Objectifs
 
@@ -71,15 +71,15 @@ Si le thème est rejeté, le processus s'arrête.
 ## Structure du projet
 
 ```bash
-/polyplag-root
+/origina-root
 │
-├── /polyplag-api            # Backend Laravel
+├── /origina-api            # Backend Laravel
 │   ├── app/Models           # Theme, Document, Report, User
 │   ├── app/Http/Controllers # Logique de validation et workflow
 │   ├── database/migrations  # Schéma MySQL (acteurs, documents, résultats)
 │   └── routes/api.php       # Endpoints API pour le frontend
 │
-├── /polyplag-client         # Frontend React
+├── /origina-client         # Frontend React
 │   ├── src/components       # Upload, graphes, visualiseurs de rapports
 │   ├── src/pages            # Dashboards Étudiant/Enseignant/DA
 │   └── src/hooks            # Appels API via Axios
@@ -101,14 +101,14 @@ Si le thème est rejeté, le processus s'arrête.
 #### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/votre-compte/polyplag.git
-cd polyplag-root
+git clone https://github.com/votre-compte/origina.git
+cd origina-root
 ```
 
 #### 2. Configurer le backend
 
 ```bash
-cd polyplag-api
+cd origina-api
 composer install
 cp .env.example .env
 php artisan key:generate
@@ -120,7 +120,7 @@ Configurer ensuite les variables de base de données dans le fichier `.env`.
 #### 3. Configurer le frontend
 
 ```bash
-cd ../polyplag-client
+cd ../origina-client
 npm install
 npm start
 ```

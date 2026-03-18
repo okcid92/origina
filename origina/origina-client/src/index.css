@@ -1,24 +1,13 @@
 body {
   margin: 0;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  font-family: "IBM Plex Sans", "Manrope", sans-serif;
+  background:
+    radial-gradient(circle at 8% 10%, rgba(17, 82, 212, 0.13), transparent 28%),
+    radial-gradient(circle at 92% 0%, rgba(30, 125, 242, 0.1), transparent 34%),
+    #f4f7fc;
   color: #0f172a;
 }
 
 #root {
   min-height: 100vh;
-}
-
-h1 {
-  margin: 0 0 8px;
-  font-size: 2rem;
-}
-
-h2 {
-  margin: 0 0 12px;
-  font-size: 1.2rem;
-}
-
-p {
-  margin: 0;
 }

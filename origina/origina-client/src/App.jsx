@@ -14,6 +14,19 @@ function riskClass(level) {
 }
 
 function App() {
+  const [theme, setTheme] = useState(() => {
+    return window.localStorage.getItem("origina_theme") || "dark";
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    window.localStorage.setItem("origina_theme", theme);
+  }, [theme]);
+
+  function toggleTheme() {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  }
+
   const [authUser, setAuthUser] = useState(() => {
     const raw = window.localStorage.getItem("origina_user");
     return raw ? JSON.parse(raw) : null;
@@ -310,132 +323,83 @@ function App() {
               <a href="#">Academic Tools</a>
               <a href="#">Tarification</a>
             </div>
-            <a className="lp-nav-cta" href="#login-panel">
-              Connexion
-            </a>
+            <div className="lp-nav-actions" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <button 
+                onClick={toggleTheme} 
+                className="theme-toggle" 
+                aria-label="Changer le thème"
+              >
+                {theme === "dark" ? (
+                  <span className="material-symbols-outlined text-lg">light_mode</span>
+                ) : (
+                  <span className="material-symbols-outlined text-lg">dark_mode</span>
+                )}
+              </button>
+              <a className="lp-nav-cta" href="#login-panel">
+                Connexion
+              </a>
+            </div>
           </div>
         </nav>
 
         <main className="lp-main">
-          <section className="lp-hero">
-            <div className="lp-hero-copy">
-              <span className="lp-chip">Integrite Academique 2.0</span>
-              <h1>
-                Garantissez l Integrite
-                <span> Academique</span>.
-              </h1>
-              <p>
-                Une plateforme complete pour la soumission, l analyse
-                anti-plagiat et la deliberation institutionnelle.
-              </p>
-              <div className="lp-hero-actions">
-                <a href="#login-panel">Commencer l analyse</a>
-                <button type="button">Decouvrir nos modules</button>
-              </div>
-            </div>
-
-            <aside className="lp-login-card" id="login-panel">
-              <h2>Connexion</h2>
-              <p>Accede a ton espace Etudiant, Enseignant ou DA/VAR.</p>
-
-              <form className="login-form" onSubmit={handleLogin}>
-                <label>
-                  Email
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="nom@origina.local"
-                    required
-                  />
-                </label>
-
-                <label>
-                  Mot de passe
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Votre mot de passe"
-                    required
-                  />
-                </label>
-
-                {loginError && <p className="error">{loginError}</p>}
-
-                <button type="submit" disabled={loginLoading}>
-                  {loginLoading ? "Connexion..." : "Se connecter"}
-                </button>
-              </form>
-
-              <div className="login-help">
-                <p>Comptes demo (mot de passe: mon926732)</p>
-                <code>student1@origina.local</code>
-                <code>teacher@origina.local</code>
-                <code>da@origina.local</code>
-                <code>var@origina.local</code>
-              </div>
-            </aside>
-          </section>
-
-          <section className="lp-bento">
-            <h3>Excellence Analytique</h3>
-            <div className="lp-bento-grid">
-              <article className="wide">
-                <h4>Moteur Multi-Niveaux</h4>
-                <p>
-                  Detection du plagiat direct, paraphrase et traduction dans un
-                  moteur unifie.
-                </p>
-                <div className="lp-tags">
-                  <span>Direct</span>
-                  <span>Paraphrase</span>
-                  <span>Traduction</span>
-                </div>
-              </article>
-              <article>
-                <h4>Analyse IA</h4>
-                <p>
-                  Detection des contenus generes par IA avec score de risque.
-                </p>
-              </article>
-              <article>
-                <h4>Gestion des Roles</h4>
-                <p>Flux dedies pour Etudiant, Enseignant et Commission.</p>
-              </article>
-              <article className="wide">
-                <h4>Rapports Detailes</h4>
-                <p>
-                  Segments surlignes, sources detectees et visualisations pour
-                  decision rapide.
-                </p>
-              </article>
-            </div>
-          </section>
-
-          <section className="lp-why">
-            <h3>Pourquoi Origina ?</h3>
+          <div className="lp-hero-copy">
+            <h1>
+              Garantissez l'Intégrité
+              <span> Académique</span>.
+            </h1>
             <p>
-              Concu pour les exigences academiques elevees, Origina structure le
-              cycle complet: theme, soumission, analyse, deliberation.
+              Une plateforme complète pour la soumission, l'analyse
+              anti-plagiat et la délibération institutionnelle.
             </p>
-            <ul>
-              <li>Conformite pedagogique et processus traceable.</li>
-              <li>Protection de la reputation institutionnelle.</li>
-              <li>Pilotage rapide des cas a risque.</li>
-            </ul>
-          </section>
+            <div className="lp-hero-actions">
+              <a href="#login-panel">Commencer l'analyse</a>
+            </div>
+          </div>
 
-          <section className="lp-cta">
-            <h3>Pret a elever vos standards academiques ?</h3>
-            <a href="#login-panel">Rejoindre Origina</a>
-          </section>
+          <aside className="lp-login-card" id="login-panel">
+            <h2>Connexion</h2>
+            <p>Accédez à votre espace Étudiant, Enseignant ou DA/VAR.</p>
+
+            <form className="login-form" onSubmit={handleLogin}>
+              <label>
+                Email
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="nom@origina.local"
+                  required
+                />
+              </label>
+
+              <label>
+                Mot de passe
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Votre mot de passe"
+                  required
+                />
+              </label>
+
+              {loginError && <p className="error">{loginError}</p>}
+
+              <button type="submit" disabled={loginLoading}>
+                {loginLoading ? "Connexion..." : "Se connecter"}
+              </button>
+            </form>
+
+            <div className="login-help">
+              <p>Comptes démo (mot de passe: mon926732)</p>
+              <code>student1@origina.local</code>
+              <code>teacher@origina.local</code>
+              <code>da@origina.local</code>
+              <code>var@origina.local</code>
+            </div>
+          </aside>
         </main>
-
-        <footer className="lp-footer">
-          <span>Origina Strategic Systems</span>
-          <small>© 2026 Tous droits reserves.</small>
-        </footer>
       </div>
     );
   }
@@ -448,19 +412,29 @@ function App() {
           <span>Origina</span>
         </div>
         <div className="topbar-user">
+          <button 
+            onClick={toggleTheme} 
+            className="theme-toggle" 
+            aria-label="Changer le thème"
+          >
+            {theme === "dark" ? (
+              <span className="material-symbols-outlined text-lg">light_mode</span>
+            ) : (
+              <span className="material-symbols-outlined text-lg">dark_mode</span>
+            )}
+          </button>
           <span>
             {authUser.name} ({authUser.role})
           </span>
-          <button onClick={handleLogout}>Deconnexion</button>
+          <button onClick={handleLogout}>Déconnexion</button>
         </div>
       </header>
 
       <main className="layout">
         <section className="hero card">
-          <h1>Flux metier par role</h1>
+          <h1>Tableau de bord</h1>
           <p>
-            Authentification, proposition de theme, moderation, analyses
-            multi-types, rapport et deliberation DA/VAR.
+            Actions rapides pour {authUser.role}.
           </p>
           {loading && <p className="muted">Chargement...</p>}
           {error && <p className="error">{error}</p>}
@@ -468,14 +442,14 @@ function App() {
         </section>
 
         {authUser.role === "student" && (
-          <section className="content-grid">
+          <div className="content-grid">
             <article className="card table-card">
-              <h3>1) Proposer un theme</h3>
+              <h3>1) Proposer un thème</h3>
               <form className="stack-form" onSubmit={proposeTheme}>
                 <input
                   value={newThemeTitle}
                   onChange={(event) => setNewThemeTitle(event.target.value)}
-                  placeholder="Titre du theme"
+                  placeholder="Titre du thème"
                   required
                 />
                 <textarea
@@ -486,15 +460,15 @@ function App() {
                   }
                   placeholder="Description courte"
                 />
-                <button type="submit">Soumettre le theme</button>
+                <button type="submit">Soumettre le thème</button>
               </form>
 
-              <h3>2) Themes proposes</h3>
+              <h3>2) Thèmes proposés</h3>
               <div className="table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>Theme</th>
+                      <th>Thème</th>
                       <th>Statut</th>
                       <th>Commentaire</th>
                     </tr>
@@ -514,14 +488,14 @@ function App() {
 
             <aside className="side-column">
               <article className="card">
-                <h3>3) Televerser le memoire</h3>
+                <h3>3) Téléverser le mémoire</h3>
                 <form className="stack-form" onSubmit={uploadDocument}>
                   <select
                     value={uploadThemeId}
                     onChange={(event) => setUploadThemeId(event.target.value)}
                     required
                   >
-                    <option value="">Choisir un theme valide</option>
+                    <option value="">Choisir un thème valide</option>
                     {approvedThemes.map((theme) => (
                       <option key={theme.id} value={theme.id}>
                         {theme.title}
@@ -534,7 +508,7 @@ function App() {
                     placeholder="Nom du fichier"
                     required
                   />
-                  <button type="submit">Televerser</button>
+                  <button type="submit">Téléverser</button>
                 </form>
               </article>
 
@@ -564,19 +538,19 @@ function App() {
                 )}
               </article>
             </aside>
-          </section>
+          </div>
         )}
 
         {["teacher", "admin"].includes(authUser.role) && (
-          <section className="content-grid">
+          <div className="content-grid">
             <article className="card table-card">
-              <h3>Moderation des themes</h3>
+              <h3>Modération des thèmes</h3>
               <div className="table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>Etudiant</th>
-                      <th>Theme</th>
+                      <th>Étudiant</th>
+                      <th>Thème</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -638,20 +612,20 @@ function App() {
                 </ul>
               </article>
             </aside>
-          </section>
+          </div>
         )}
 
         {["da", "var"].includes(authUser.role) && (
-          <section className="content-grid">
+          <div className="content-grid">
             <article className="card table-card">
-              <h3>Dossiers a statuer</h3>
+              <h3>Dossiers à statuer</h3>
               <div className="table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>Etudiant</th>
-                      <th>Theme</th>
-                      <th>Similarite</th>
+                      <th>Étudiant</th>
+                      <th>Thème</th>
+                      <th>Similarité</th>
                       <th>Risque</th>
                       <th>Action</th>
                     </tr>
@@ -681,12 +655,12 @@ function App() {
 
             <aside className="side-column">
               <article className="card">
-                <h3>Decision Commission</h3>
+                <h3>Décision Commission</h3>
                 <textarea
                   rows="4"
                   value={decisionNotes}
                   onChange={(event) => setDecisionNotes(event.target.value)}
-                  placeholder="Notes de deliberation"
+                  placeholder="Notes de délibération"
                 />
                 <div className="button-row">
                   <button onClick={() => deliberate("final_validation")}>
@@ -702,20 +676,20 @@ function App() {
                     className="ghost"
                     onClick={() => deliberate("rewrite_required")}
                   >
-                    Reecriture
+                    Réécriture
                   </button>
                 </div>
               </article>
             </aside>
-          </section>
+          </div>
         )}
 
         {reportDetails && (
           <section className="card table-card">
-            <h3>Rapport detaille #{reportDetails.report.id}</h3>
+            <h3>Rapport détaillé #{reportDetails.report.id}</h3>
             <p>
               {reportDetails.report.student_name} -{" "}
-              {reportDetails.report.theme_title} - similarite{" "}
+              {reportDetails.report.theme_title} - similarité{" "}
               {toPercent(reportDetails.report.global_similarity)}
             </p>
 

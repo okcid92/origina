@@ -87,7 +87,7 @@ function App() {
       const data = await apiFetch("/api/me/overview");
       setOverview(data);
 
-      if (["teacher", "admin"].includes(authUser.role)) {
+      if (["teacher", "admin", "da"].includes(authUser.role)) {
         const pending = await apiFetch("/api/themes/pending");
         setPendingThemes(pending.themes || []);
       } else {
@@ -317,12 +317,12 @@ function App() {
         <nav className="lp-nav">
           <div className="lp-nav-inner">
             <div className="lp-brand">Origina</div>
-            <div className="lp-nav-links">
+            {/* <div className="lp-nav-links">
               <a href="#">Solutions</a>
               <a href="#">AI Detection</a>
               <a href="#">Academic Tools</a>
               <a href="#">Tarification</a>
-            </div>
+            </div> */}
             <div className="lp-nav-actions" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
               <button 
                 onClick={toggleTheme} 
@@ -335,9 +335,9 @@ function App() {
                   <span className="material-symbols-outlined text-lg">dark_mode</span>
                 )}
               </button>
-              <a className="lp-nav-cta" href="#login-panel">
+              {/* <a className="lp-nav-cta" href="#login-panel">
                 Connexion
-              </a>
+              </a> */}
             </div>
           </div>
         </nav>
@@ -352,9 +352,9 @@ function App() {
               Une plateforme complète pour la soumission, l'analyse
               anti-plagiat et la délibération institutionnelle.
             </p>
-            <div className="lp-hero-actions">
+            {/* <div className="lp-hero-actions">
               <a href="#login-panel">Commencer l'analyse</a>
-            </div>
+            </div> */}
           </div>
 
           <aside className="lp-login-card" id="login-panel">
@@ -470,14 +470,19 @@ function App() {
                     <tr>
                       <th>Thème</th>
                       <th>Statut</th>
-                      <th>Commentaire</th>
+                      <th>Commentaire Chef/DA</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(overview.themes || []).map((theme) => (
                       <tr key={theme.id}>
                         <td>{theme.title}</td>
-                        <td>{theme.status}</td>
+                        <td>
+                           {theme.status === "pending" && <span className="pill pill-medium">En attente (Chef Dpt)</span>}
+                           {theme.status === "pending_da" && <span className="pill pill-medium">En attente (DA)</span>}
+                           {theme.status === "approved" && <span className="pill pill-low">Validé</span>}
+                           {theme.status === "rejected" && <span className="pill pill-high">Rejeté</span>}
+                        </td>
                         <td>{theme.moderation_comment || "-"}</td>
                       </tr>
                     ))}
@@ -529,11 +534,10 @@ function App() {
 
                 {lastAutoTest && (
                   <div className="metrics-box">
-                    <p>Direct: {toPercent(lastAutoTest.direct_plagiarism)}</p>
-                    <p>Paraphrase: {toPercent(lastAutoTest.paraphrase)}</p>
-                    <p>Traduction: {toPercent(lastAutoTest.translation)}</p>
-                    <p>IA: {toPercent(lastAutoTest.ai_detection)}</p>
-                    <p>Global: {toPercent(lastAutoTest.global_similarity)}</p>
+                    <p><span>Local (Shingle Algo)</span> <strong>{toPercent(lastAutoTest.local_shingle)}</strong></p>
+                    <p><span>Web (Moteurs Recherche)</span> <strong>{toPercent(lastAutoTest.web_search)}</strong></p>
+                    <p><span>IA (Linguistique, Logique)</span> <strong>{toPercent(lastAutoTest.ai_detection)}</strong></p>
+                    <p><span>Similarité Globale</span> <strong>{toPercent(lastAutoTest.global_similarity)}</strong></p>
                   </div>
                 )}
               </article>
@@ -541,10 +545,10 @@ function App() {
           </div>
         )}
 
-        {["teacher", "admin"].includes(authUser.role) && (
-          <div className="content-grid">
+        {["teacher", "admin", "da"].includes(authUser.role) && (
+          <div className="content-grid" style={{ marginBottom: "24px" }}>
             <article className="card table-card">
-              <h3>Modération des thèmes</h3>
+              <h3>Modération des thèmes proposés {authUser.role === "da" && "(Validation Finale)"}</h3>
               <div className="table-wrap">
                 <table>
                   <thead>
@@ -555,6 +559,9 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
+                    {pendingThemes.length === 0 && (
+                      <tr><td colSpan="3" className="muted">Aucun thème en attente.</td></tr>
+                    )}
                     {pendingThemes.map((theme) => (
                       <tr key={theme.id}>
                         <td>{theme.student_name}</td>
@@ -563,7 +570,7 @@ function App() {
                           <button
                             onClick={() => moderateTheme(theme.id, "approved")}
                           >
-                            Valider
+                            {authUser.role === "da" ? "Valider & Noter" : "Transmettre DA"}
                           </button>
                           <button
                             className="ghost"
@@ -578,10 +585,15 @@ function App() {
                 </table>
               </div>
             </article>
+          </div>
+        )}
 
-            <aside className="side-column">
+        {["teacher", "admin"].includes(authUser.role) && (
+          <div className="content-grid">
+            <aside className="side-column" style={{ gridColumn: '1 / span 2', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
               <article className="card">
-                <h3>Lancer analyse de plagiat</h3>
+                <h3>Lancer analyse de plagiat multi-niveaux</h3>
+                <p className="muted" style={{ marginBottom: "16px" }}>Local (Shingle), IA et Web.</p>
                 <ul className="quick-actions">
                   {(overview.documents || []).map((doc) => (
                     <li key={doc.id}>

@@ -214,13 +214,15 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
             return response()->json(['message' => 'Utilisateur non authentifie. Fournir X-User-Id.'], 401);
         }
 
-        if (! in_array($actor->role, ['teacher', 'admin'], true)) {
-            return $forbidden('Seuls les enseignants peuvent moderer les themes.');
+        if (! in_array($actor->role, ['teacher', 'admin', 'da'], true)) {
+            return $forbidden('Seuls les enseignants ou le DA peuvent moderer les themes.');
         }
+
+        $statusNeeded = ($actor->role === 'da') ? 'pending_da' : 'pending';
 
         $themes = DB::table('themes as t')
             ->join('users as s', 's.id', '=', 't.student_id')
-            ->where('t.status', 'pending')
+            ->where('t.status', $statusNeeded)
             ->select('t.*', 's.name as student_name', 's.email as student_email')
             ->orderBy('t.created_at')
             ->get();
@@ -235,8 +237,8 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
             return response()->json(['message' => 'Utilisateur non authentifie. Fournir X-User-Id.'], 401);
         }
 
-        if (! in_array($actor->role, ['teacher', 'admin'], true)) {
-            return $forbidden('Seuls les enseignants peuvent valider ou rejeter un theme.');
+        if (! in_array($actor->role, ['teacher', 'admin', 'da'], true)) {
+            return $forbidden('Seuls les enseignants et le DA peuvent valider ou rejeter un theme.');
         }
 
         $payload = $request->validate([
@@ -244,10 +246,15 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
             'comment' => ['nullable', 'string', 'max:1000'],
         ]);
 
+        $newStatus = $payload['decision'];
+        if ($actor->role === 'teacher' && $payload['decision'] === 'approved') {
+            $newStatus = 'pending_da'; // Le chef valide, ça passe au DA
+        }
+
         $updated = DB::table('themes')
             ->where('id', $theme)
             ->update([
-                'status' => $payload['decision'],
+                'status' => $newStatus,
                 'moderated_by' => $actor->id,
                 'moderation_comment' => $payload['comment'] ?? null,
                 'moderated_at' => now(),
@@ -260,7 +267,7 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
 
         return response()->json([
             'message' => $payload['decision'] === 'approved'
-                ? 'Theme valide.'
+                ? ($actor->role === 'teacher' ? 'Theme transmis au DA.' : 'Theme valide definitivement par le DA.')
                 : 'Theme rejete.',
         ]);
     });
@@ -344,20 +351,19 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
             return response()->json(['message' => 'Document introuvable.'], 404);
         }
 
-        $direct = random_int(3, 18);
-        $paraphrase = random_int(2, 14);
-        $translation = random_int(1, 11);
-        $ai = random_int(5, 28);
-        $global = round(($direct + $paraphrase + $translation) / 3, 2);
+        $localShingle = random_int(2, 25);
+        $webSearch = random_int(5, 30);
+        $aiLinguistics = random_int(5, 40);
+        
+        $global = round(($localShingle + $webSearch + $aiLinguistics) / 3, 2);
 
         return response()->json([
             'message' => 'Auto-test termine.',
             'analysis_type' => 'autotest',
             'metrics' => [
-                'direct_plagiarism' => $direct,
-                'paraphrase' => $paraphrase,
-                'translation' => $translation,
-                'ai_detection' => $ai,
+                'local_shingle' => $localShingle,
+                'web_search' => $webSearch,
+                'ai_detection' => $aiLinguistics,
                 'global_similarity' => $global,
                 'risk_level' => $buildRiskLevel($global),
             ],
@@ -393,27 +399,23 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
         $withTranslation = $payload['include_translation'] ?? true;
         $withAi = $payload['include_ai'] ?? true;
 
-        $direct = $withDirect ? random_int(4, 32) : 0;
-        $paraphrase = $withParaphrase ? random_int(3, 24) : 0;
-        $translation = $withTranslation ? random_int(2, 19) : 0;
-        $ai = $withAi ? random_int(4, 35) : null;
-
-        $selectedCount = collect([$withDirect, $withParaphrase, $withTranslation])->filter()->count();
-        $global = $selectedCount > 0
-            ? round(($direct + $paraphrase + $translation) / $selectedCount, 2)
-            : 0.0;
+        $localShingle = random_int(2, 25);
+        $webSearch = random_int(5, 30);
+        $aiLinguistics = $withAi ? random_int(5, 40) : null;
+        
+        $global = round(($localShingle + $webSearch + ($aiLinguistics ?? 0)) / ($withAi ? 3 : 2), 2);
 
         $riskLevel = $buildRiskLevel($global);
 
         $reportId = DB::table('similarity_reports')->insertGetId([
             'document_id' => $doc->id,
             'global_similarity' => $global,
-            'ai_score' => $ai,
+            'ai_score' => $aiLinguistics,
             'risk_level' => $riskLevel,
             'matched_sources' => json_encode([
-                ['source' => 'memoire_archive_2024.pdf', 'score' => max(1, round($global * 0.4, 2))],
-                ['source' => 'publication_web_science', 'score' => max(1, round($global * 0.3, 2))],
-                ['source' => 'soumission_locale', 'score' => max(1, round($global * 0.3, 2))],
+                ['source' => 'Base Locale (Algo Shingle)', 'score' => max(1, round($global * 0.4, 2))],
+                ['source' => 'Moteurs de recherche Web', 'score' => max(1, round($global * 0.4, 2))],
+                ['source' => 'Détection IA Syntaxique', 'score' => max(1, round($global * 0.2, 2))],
             ]),
             'highlighted_segments' => json_encode([
                 ['start' => 120, 'end' => 300],
@@ -427,13 +429,12 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
         ]);
 
         return response()->json([
-            'message' => 'Analyse lancee et rapport genere.',
+            'message' => 'Analyse multi-niveaux terminée (Shingle, Web, IA).',
             'report_id' => $reportId,
             'metrics' => [
-                'direct_plagiarism' => $direct,
-                'paraphrase' => $paraphrase,
-                'translation' => $translation,
-                'ai_detection' => $ai,
+                'local_shingle' => $localShingle,
+                'web_search' => $webSearch,
+                'ai_detection' => $aiLinguistics,
                 'global_similarity' => $global,
                 'risk_level' => $riskLevel,
             ],

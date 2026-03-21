@@ -1,16 +1,35 @@
-# React + Vite
+# Origina Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Le frontend de la solution Origina : le système intégré de détection de plagiat et de gestion académique (IBAM / MIAGE). 
 
-Currently, two official plugins are available:
+## 🎨 Design System : Midnight Obsidian
+L'interface est entièrement pensée et structurée sur mesure avec le design system **Midnight Obsidian**.
+- **Stack** : React + Vite
+- **Styling** : Vanillla CSS pur (pas de Tailwind CSS ou autre surcouche) afin de garder le contrôle total sur l'esthétique.
+- **Thèmes** : Prise en charge d'un basculement dynamique complet **Light / Dark mode** (sauvegardé via localStorage). L'expérience sombre est conçue comme un Command Center (tons Slate & "blue glow").
+- **Icônes & Police** : Google Material Symbols et famille de polices variable "Inter".
+- **Composants** :
+  - **Landing Page** avec dégradés fluides et animations au survol
+  - **Dashboard** organisé avec Sidebar, KPI cards personnalisées, indicateurs de gravité (pilules rouge/jaune/verte)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Démarrage Rapide
 
-## React Compiler
+1. Installer les dépendances :
+```bash
+npm install
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+2. Démarrer le serveur de développement local :
+```bash
+npm run dev
+```
 
-## Expanding the ESLint configuration
+3. Construire et préparer une version de production :
+```bash
+npm run build
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🏗 Structure du Code
+- `src/App.jsx` : L'application principale gérant le routage natif, les vues et les requêtes (API).
+- `src/index.css` : Configuration root (fonts, corps de base).
+- `src/App.css` : Le cœur du système visuel **Midnight Obsidian** contenant à la fois la logique du Dark mode (défaut) et les variables CSS du Light mode (`[data-theme="light"]`), ainsi que toute l'architecture structurelle (login, topbar, dashboard layout).

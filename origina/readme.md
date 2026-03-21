@@ -51,7 +51,7 @@ Le système ne se limite pas au texte brut. Il analyse:
 
 | Composant           | Technologie                                     |
 | ------------------- | ----------------------------------------------- |
-| Frontend            | React.js (Tailwind CSS, Lucide Icons, Chart.js) |
+| Frontend            | React.js (Vanilla CSS, Material Symbols, Midnight Obsidian Design) |
 | Backend             | Laravel 10/11 (PHP)                             |
 | Base de données     | MySQL                                           |
 | Traitement NLP      | Python (scripts via `shell_exec` ou API Flask)  |
@@ -122,7 +122,7 @@ Configurer ensuite les variables de base de données dans le fichier `.env`.
 ```bash
 cd ../origina-client
 npm install
-npm start
+npm run dev
 ```
 
 ## Schéma de base de données (résumé)

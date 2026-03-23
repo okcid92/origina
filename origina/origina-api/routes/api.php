@@ -149,7 +149,7 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
                     't.status as theme_status',
                     's.name as student_name'
                 )
-                ->where('t.status', 'approved')
+                ->where('t.status', 'VALIDATED_DA')
                 ->orderByDesc('d.submitted_at')
                 ->limit(20)
                 ->get();
@@ -195,7 +195,7 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
             'student_id' => $actor->id,
             'title' => $title,
             'description' => $payload['description'] ?? null,
-            'status' => 'pending',
+            'status' => 'PENDING',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -218,7 +218,7 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
             return $forbidden('Seuls les enseignants ou le DA peuvent moderer les themes.');
         }
 
-        $statusNeeded = ($actor->role === 'da') ? 'pending_da' : 'pending';
+        $statusNeeded = ($actor->role === 'da') ? 'VALIDATED_CD' : 'PENDING';
 
         $themes = DB::table('themes as t')
             ->join('users as s', 's.id', '=', 't.student_id')
@@ -246,20 +246,28 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
             'comment' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $newStatus = $payload['decision'];
-        if ($actor->role === 'teacher' && $payload['decision'] === 'approved') {
-            $newStatus = 'pending_da'; // Le chef valide, ça passe au DA
+        $decision = $payload['decision'];
+        $newStatus = 'REJECTED';
+        $noteDa = $request->input('note_da');
+
+        if ($decision === 'approved') {
+            $newStatus = ($actor->role === 'teacher') ? 'VALIDATED_CD' : 'VALIDATED_DA';
+        }
+
+        $updateData = [
+            'status' => $newStatus,
+            'moderated_by' => $actor->id,
+            'moderation_comment' => $payload['comment'] ?? null,
+            'moderated_at' => now(),
+            'updated_at' => now(),
+        ];
+        if ($noteDa) {
+            $updateData['note_da'] = $noteDa;
         }
 
         $updated = DB::table('themes')
             ->where('id', $theme)
-            ->update([
-                'status' => $newStatus,
-                'moderated_by' => $actor->id,
-                'moderation_comment' => $payload['comment'] ?? null,
-                'moderated_at' => now(),
-                'updated_at' => now(),
-            ]);
+            ->update($updateData);
 
         if (! $updated) {
             return response()->json(['message' => 'Theme introuvable.'], 404);
@@ -300,9 +308,9 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
             return response()->json(['message' => 'Theme introuvable pour cet etudiant.'], 404);
         }
 
-        if ($theme->status !== 'approved') {
+        if ($theme->status !== 'VALIDATED_DA') {
             return response()->json([
-                'message' => 'Televersement impossible: le theme doit etre valide.',
+                'message' => 'Televersement impossible: le theme doit etre valide par le DA.',
             ], 422);
         }
 
@@ -357,8 +365,19 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
         
         $global = round(($localShingle + $webSearch + $aiLinguistics) / 3, 2);
 
+        try {
+            DB::table('verifications')->insertGetId([
+                'document_id' => $doc->id,
+                'score_global' => $global,
+                'type' => 'AUTO-TEST',
+                'date_test' => now(),
+            ]);
+        } catch (\Exception $e) {
+            // Table might not exist yet, ignoring...
+        }
+
         return response()->json([
-            'message' => 'Auto-test termine.',
+            'message' => 'Auto-test termine et enregistre.',
             'analysis_type' => 'autotest',
             'metrics' => [
                 'local_shingle' => $localShingle,
@@ -427,6 +446,17 @@ Route::group([], function () use ($resolveActor, $forbidden, $jsonDecodeOrEmpty,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        try {
+            DB::table('verifications')->insertGetId([
+                'document_id' => $doc->id,
+                'score_global' => $global,
+                'type' => 'OFFICIEL',
+                'date_test' => now(),
+            ]);
+        } catch (\Exception $e) {
+            // Table might not exist yet, ignoring...
+        }
 
         return response()->json([
             'message' => 'Analyse multi-niveaux terminée (Shingle, Web, IA).',

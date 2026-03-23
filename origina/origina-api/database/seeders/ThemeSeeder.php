@@ -1,3 +1,4 @@
+(student)
 <?php
 
 namespace Database\Seeders;
@@ -13,7 +14,7 @@ class ThemeSeeder extends Seeder
      */
     public function run(): void
     {
-        $student1 = User::where('email', 'student1@origina.local')->first();
+        $student1 = User::where('email', 'dickoalou04@gmail.com')->first();
         $student2 = User::where('email', 'student2@origina.local')->first();
         $teacher = User::where('email', 'teacher@origina.local')->first();
 

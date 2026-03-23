@@ -35,20 +35,8 @@ class UserSeeder extends Seeder
                 'department' => 'Scolarite',
             ],
             [
-                'name' => 'Commission VAR',
-                'email' => 'var@origina.local',
-                'role' => 'var',
-                'department' => 'VAR',
-            ],
-            [
-                'name' => 'Etudiant Test 1',
-                'email' => 'student1@origina.local',
-                'role' => 'student',
-                'department' => 'Informatique',
-            ],
-            [
-                'name' => 'Etudiant Test 2',
-                'email' => 'student2@origina.local',
+                'name' => 'Dicko Alou',
+                'email' => 'dickoalou04@gmail.com',
                 'role' => 'student',
                 'department' => 'Informatique',
             ],

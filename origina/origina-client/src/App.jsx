@@ -54,7 +54,7 @@ function App() {
   const [newThemeTitle, setNewThemeTitle] = useState("");
   const [newThemeDescription, setNewThemeDescription] = useState("");
   const [uploadThemeId, setUploadThemeId] = useState("");
-  const [uploadName, setUploadName] = useState("memoire-v2.pdf");
+  const [uploadFile, setUploadFile] = useState(null);
   const [lastAutoTest, setLastAutoTest] = useState(null);
   const [decisionNotes, setDecisionNotes] = useState("");
 
@@ -185,6 +185,10 @@ function App() {
 
   async function uploadDocument(event) {
     event.preventDefault();
+    if (!uploadFile) {
+      setError("Veuillez sélectionner un document.");
+      return;
+    }
     setNotice("");
     setError("");
 
@@ -193,14 +197,15 @@ function App() {
         method: "POST",
         body: JSON.stringify({
           theme_id: Number(uploadThemeId),
-          original_name: uploadName,
-          mime_type: "application/pdf",
-          file_size: 1843200,
+          original_name: uploadFile.name,
+          mime_type: uploadFile.type || "application/pdf",
+          file_size: uploadFile.size,
           is_final: true,
         }),
       });
 
       setNotice(payload.message);
+      setUploadFile(null); // Reset the file after upload
       await reloadData();
     } catch (err) {
       setError(err.message);
@@ -223,6 +228,13 @@ function App() {
   }
 
   async function moderateTheme(themeId, decision) {
+    let noteDa = undefined;
+    if (authUser.role === "da" && decision === "approved") {
+      const input = window.prompt("Entrez la note finale ou appréciation (Note_DA) pour ce thème :");
+      if (input === null) return;
+      noteDa = input;
+    }
+
     setNotice("");
     setError("");
 
@@ -235,6 +247,7 @@ function App() {
             decision === "approved"
               ? "Theme valide pour progression."
               : "Theme a reformuler.",
+          note_da: noteDa
         }),
       });
       setNotice(payload.message);
@@ -307,7 +320,7 @@ function App() {
 
   const approvedThemes = useMemo(
     () =>
-      (overview.themes || []).filter((theme) => theme.status === "approved"),
+      (overview.themes || []).filter((theme) => theme.status === "VALIDATED_DA"),
     [overview.themes],
   );
 
@@ -478,12 +491,12 @@ function App() {
                       <tr key={theme.id}>
                         <td>{theme.title}</td>
                         <td>
-                           {theme.status === "pending" && <span className="pill pill-medium">En attente (Chef Dpt)</span>}
-                           {theme.status === "pending_da" && <span className="pill pill-medium">En attente (DA)</span>}
-                           {theme.status === "approved" && <span className="pill pill-low">Validé</span>}
-                           {theme.status === "rejected" && <span className="pill pill-high">Rejeté</span>}
+                           {theme.status === "PENDING" && <span className="pill pill-medium">En attente (Chef Dpt)</span>}
+                           {theme.status === "VALIDATED_CD" && <span className="pill pill-medium">En attente (DA)</span>}
+                           {theme.status === "VALIDATED_DA" && <span className="pill pill-low">Validé DA</span>}
+                           {theme.status === "REJECTED" && <span className="pill pill-high">Rejeté</span>}
                         </td>
-                        <td>{theme.moderation_comment || "-"}</td>
+                        <td>{theme.note_da ? `Note DA: ${theme.note_da}` : (theme.moderation_comment || "-")}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -500,7 +513,7 @@ function App() {
                     onChange={(event) => setUploadThemeId(event.target.value)}
                     required
                   >
-                    <option value="">Choisir un thème valide</option>
+                    <option value="">Choisir un thème (Validé par le DA)</option>
                     {approvedThemes.map((theme) => (
                       <option key={theme.id} value={theme.id}>
                         {theme.title}
@@ -508,12 +521,17 @@ function App() {
                     ))}
                   </select>
                   <input
-                    value={uploadName}
-                    onChange={(event) => setUploadName(event.target.value)}
-                    placeholder="Nom du fichier"
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={(event) => {
+                      if (event.target.files && event.target.files.length > 0) {
+                        setUploadFile(event.target.files[0]);
+                      }
+                    }}
                     required
+                    style={{ fontSize: "0.875rem", padding: "8px" }}
                   />
-                  <button type="submit">Téléverser</button>
+                  <button type="submit">Téléverser le fichier</button>
                 </form>
               </article>
 

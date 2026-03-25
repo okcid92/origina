@@ -1,4 +1,3 @@
-(student)
 <?php
 
 namespace Database\Seeders;

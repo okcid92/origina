@@ -12,7 +12,7 @@ class DocumentSeeder extends Seeder
      */
     public function run(): void
     {
-        $approvedTheme = DB::table('themes')->where('status', 'approved')->first();
+        $approvedTheme = DB::table('themes')->where('status', 'VALIDATED_DA')->first();
 
         if (! $approvedTheme) {
             return;

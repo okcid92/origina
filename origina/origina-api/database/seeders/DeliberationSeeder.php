@@ -27,7 +27,7 @@ class DeliberationSeeder extends Seeder
             ],
             [
                 'decided_by' => $da->id,
-                'decision' => 'revision_required',
+                'decision' => 'rewrite_required',
                 'notes' => 'Demander references complementaires pour les passages signales.',
                 'decided_at' => now()->subDays(4),
                 'created_at' => now(),

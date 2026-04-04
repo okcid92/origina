@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use Tests\TestCase;
 
+#[RequiresPhpExtension('pdo_sqlite')]
 class WorkflowTest extends TestCase
 {
     use RefreshDatabase;

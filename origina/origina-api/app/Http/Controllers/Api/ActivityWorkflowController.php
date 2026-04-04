@@ -186,8 +186,8 @@ class ActivityWorkflowController extends Controller
             return response()->json(['message' => 'Utilisateur non authentifie. Fournir X-User-Id.'], 401);
         }
 
-        if (! in_array($actor->role, ['teacher', 'admin', 'da', 'var'], true)) {
-            return response()->json(['message' => 'Acces reserve aux enseignants et a la commission.'], 403);
+        if (! in_array($actor->role, ['teacher', 'admin', 'da'], true)) {
+            return response()->json(['message' => 'Acces reserve aux enseignants et a la DA.'], 403);
         }
 
         return $this->workflow->reportsIndex($actor);
@@ -201,8 +201,8 @@ class ActivityWorkflowController extends Controller
             return response()->json(['message' => 'Utilisateur non authentifie. Fournir X-User-Id.'], 401);
         }
 
-        if (! in_array($actor->role, ['teacher', 'admin', 'da', 'var'], true)) {
-            return response()->json(['message' => 'Acces reserve aux enseignants et a la commission.'], 403);
+        if (! in_array($actor->role, ['teacher', 'admin', 'da'], true)) {
+            return response()->json(['message' => 'Acces reserve aux enseignants et a la DA.'], 403);
         }
 
         return $this->workflow->showReport($actor, $report);
@@ -216,8 +216,8 @@ class ActivityWorkflowController extends Controller
             return response()->json(['message' => 'Utilisateur non authentifie. Fournir X-User-Id.'], 401);
         }
 
-        if (! in_array($actor->role, ['da', 'var', 'admin'], true)) {
-            return response()->json(['message' => 'Seule la DA / Commission VAR peut statuer.'], 403);
+        if (! in_array($actor->role, ['da', 'admin'], true)) {
+            return response()->json(['message' => 'Seule la DA peut statuer.'], 403);
         }
 
         $payload = $request->validate([

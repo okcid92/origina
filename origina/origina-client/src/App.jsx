@@ -57,6 +57,10 @@ function App() {
   const [uploadFile, setUploadFile] = useState(null);
   const [lastAutoTest, setLastAutoTest] = useState(null);
   const [decisionNotes, setDecisionNotes] = useState("");
+  const [activeTab, setActiveTab] = useState("workflow");
+  const [aiInputText, setAiInputText] = useState("");
+  const [aiDetectionLoading, setAiDetectionLoading] = useState(false);
+  const [aiDetectionResult, setAiDetectionResult] = useState(null);
 
   async function apiFetch(path, options = {}) {
     const headers = {
@@ -156,6 +160,9 @@ function App() {
     setReports([]);
     setSelectedReport(null);
     setReportDetails(null);
+    setAiDetectionResult(null);
+    setAiInputText("");
+    setActiveTab("workflow");
     setNotice("");
     setError("");
   }
@@ -230,7 +237,9 @@ function App() {
   async function moderateTheme(themeId, decision) {
     let noteDa = undefined;
     if (authUser.role === "da" && decision === "approved") {
-      const input = window.prompt("Entrez la note finale ou appréciation (Note_DA) pour ce thème :");
+      const input = window.prompt(
+        "Entrez la note finale ou appréciation (Note_DA) pour ce thème :",
+      );
       if (input === null) return;
       noteDa = input;
     }
@@ -247,7 +256,7 @@ function App() {
             decision === "approved"
               ? "Theme valide pour progression."
               : "Theme a reformuler.",
-          note_da: noteDa
+          note_da: noteDa,
         }),
       });
       setNotice(payload.message);
@@ -318,9 +327,33 @@ function App() {
     }
   }
 
+  async function detectAiWithGemini(event) {
+    event.preventDefault();
+    setNotice("");
+    setError("");
+    setAiDetectionResult(null);
+
+    try {
+      setAiDetectionLoading(true);
+      const payload = await apiFetch("/api/ai/detect", {
+        method: "POST",
+        body: JSON.stringify({ text: aiInputText }),
+      });
+
+      setAiDetectionResult(payload.data || null);
+      setNotice(payload.message || "Détection IA terminée.");
+    } catch (err) {
+      setError(err.message || "Échec de la détection IA.");
+    } finally {
+      setAiDetectionLoading(false);
+    }
+  }
+
   const approvedThemes = useMemo(
     () =>
-      (overview.themes || []).filter((theme) => theme.status === "VALIDATED_DA"),
+      (overview.themes || []).filter(
+        (theme) => theme.status === "VALIDATED_DA",
+      ),
     [overview.themes],
   );
 
@@ -336,16 +369,23 @@ function App() {
               <a href="#">Academic Tools</a>
               <a href="#">Tarification</a>
             </div> */}
-            <div className="lp-nav-actions" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-              <button 
-                onClick={toggleTheme} 
-                className="theme-toggle" 
+            <div
+              className="lp-nav-actions"
+              style={{ display: "flex", gap: "16px", alignItems: "center" }}
+            >
+              <button
+                onClick={toggleTheme}
+                className="theme-toggle"
                 aria-label="Changer le thème"
               >
                 {theme === "dark" ? (
-                  <span className="material-symbols-outlined text-lg">light_mode</span>
+                  <span className="material-symbols-outlined text-lg">
+                    light_mode
+                  </span>
                 ) : (
-                  <span className="material-symbols-outlined text-lg">dark_mode</span>
+                  <span className="material-symbols-outlined text-lg">
+                    dark_mode
+                  </span>
                 )}
               </button>
               {/* <a className="lp-nav-cta" href="#login-panel">
@@ -362,8 +402,8 @@ function App() {
               <span> Académique</span>.
             </h1>
             <p>
-              Une plateforme complète pour la soumission, l'analyse
-              anti-plagiat et la délibération institutionnelle.
+              Une plateforme complète pour la soumission, l'analyse anti-plagiat
+              et la délibération institutionnelle.
             </p>
             {/* <div className="lp-hero-actions">
               <a href="#login-panel">Commencer l'analyse</a>
@@ -425,15 +465,19 @@ function App() {
           <span>Origina</span>
         </div>
         <div className="topbar-user">
-          <button 
-            onClick={toggleTheme} 
-            className="theme-toggle" 
+          <button
+            onClick={toggleTheme}
+            className="theme-toggle"
             aria-label="Changer le thème"
           >
             {theme === "dark" ? (
-              <span className="material-symbols-outlined text-lg">light_mode</span>
+              <span className="material-symbols-outlined text-lg">
+                light_mode
+              </span>
             ) : (
-              <span className="material-symbols-outlined text-lg">dark_mode</span>
+              <span className="material-symbols-outlined text-lg">
+                dark_mode
+              </span>
             )}
           </button>
           <span>
@@ -446,15 +490,28 @@ function App() {
       <main className="layout">
         <section className="hero card">
           <h1>Tableau de bord</h1>
-          <p>
-            Actions rapides pour {authUser.role}.
-          </p>
+          <p>Actions rapides pour {authUser.role}.</p>
           {loading && <p className="muted">Chargement...</p>}
           {error && <p className="error">{error}</p>}
           {notice && <p className="success">{notice}</p>}
         </section>
 
-        {authUser.role === "student" && (
+        <section className="card tab-switcher">
+          <button
+            className={activeTab === "workflow" ? "tab-btn active" : "tab-btn"}
+            onClick={() => setActiveTab("workflow")}
+          >
+            Workflow
+          </button>
+          <button
+            className={activeTab === "ai" ? "tab-btn active" : "tab-btn"}
+            onClick={() => setActiveTab("ai")}
+          >
+            Détection IA
+          </button>
+        </section>
+
+        {activeTab === "workflow" && authUser.role === "student" && (
           <div className="content-grid">
             <article className="card table-card">
               <h3>1) Proposer un thème</h3>
@@ -491,12 +548,28 @@ function App() {
                       <tr key={theme.id}>
                         <td>{theme.title}</td>
                         <td>
-                           {theme.status === "PENDING" && <span className="pill pill-medium">En attente (Chef Dpt)</span>}
-                           {theme.status === "VALIDATED_CD" && <span className="pill pill-medium">En attente (DA)</span>}
-                           {theme.status === "VALIDATED_DA" && <span className="pill pill-low">Validé DA</span>}
-                           {theme.status === "REJECTED" && <span className="pill pill-high">Rejeté</span>}
+                          {theme.status === "PENDING" && (
+                            <span className="pill pill-medium">
+                              En attente (Chef Dpt)
+                            </span>
+                          )}
+                          {theme.status === "VALIDATED_CD" && (
+                            <span className="pill pill-medium">
+                              En attente (DA)
+                            </span>
+                          )}
+                          {theme.status === "VALIDATED_DA" && (
+                            <span className="pill pill-low">Validé DA</span>
+                          )}
+                          {theme.status === "REJECTED" && (
+                            <span className="pill pill-high">Rejeté</span>
+                          )}
                         </td>
-                        <td>{theme.note_da ? `Note DA: ${theme.note_da}` : (theme.moderation_comment || "-")}</td>
+                        <td>
+                          {theme.note_da
+                            ? `Note DA: ${theme.note_da}`
+                            : theme.moderation_comment || "-"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -513,7 +586,9 @@ function App() {
                     onChange={(event) => setUploadThemeId(event.target.value)}
                     required
                   >
-                    <option value="">Choisir un thème (Validé par le DA)</option>
+                    <option value="">
+                      Choisir un thème (Validé par le DA)
+                    </option>
                     {approvedThemes.map((theme) => (
                       <option key={theme.id} value={theme.id}>
                         {theme.title}
@@ -552,10 +627,24 @@ function App() {
 
                 {lastAutoTest && (
                   <div className="metrics-box">
-                    <p><span>Local (Shingle Algo)</span> <strong>{toPercent(lastAutoTest.local_shingle)}</strong></p>
-                    <p><span>Web (Moteurs Recherche)</span> <strong>{toPercent(lastAutoTest.web_search)}</strong></p>
-                    <p><span>IA (Linguistique, Logique)</span> <strong>{toPercent(lastAutoTest.ai_detection)}</strong></p>
-                    <p><span>Similarité Globale</span> <strong>{toPercent(lastAutoTest.global_similarity)}</strong></p>
+                    <p>
+                      <span>Local (Shingle Algo)</span>{" "}
+                      <strong>{toPercent(lastAutoTest.local_shingle)}</strong>
+                    </p>
+                    <p>
+                      <span>Web (Moteurs Recherche)</span>{" "}
+                      <strong>{toPercent(lastAutoTest.web_search)}</strong>
+                    </p>
+                    <p>
+                      <span>IA (Linguistique, Logique)</span>{" "}
+                      <strong>{toPercent(lastAutoTest.ai_detection)}</strong>
+                    </p>
+                    <p>
+                      <span>Similarité Globale</span>{" "}
+                      <strong>
+                        {toPercent(lastAutoTest.global_similarity)}
+                      </strong>
+                    </p>
                   </div>
                 )}
               </article>
@@ -563,89 +652,113 @@ function App() {
           </div>
         )}
 
-        {["teacher", "admin", "da"].includes(authUser.role) && (
-          <div className="content-grid" style={{ marginBottom: "24px" }}>
-            <article className="card table-card">
-              <h3>Modération des thèmes proposés {authUser.role === "da" && "(Validation Finale)"}</h3>
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Étudiant</th>
-                      <th>Thème</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingThemes.length === 0 && (
-                      <tr><td colSpan="3" className="muted">Aucun thème en attente.</td></tr>
-                    )}
-                    {pendingThemes.map((theme) => (
-                      <tr key={theme.id}>
-                        <td>{theme.student_name}</td>
-                        <td>{theme.title}</td>
-                        <td className="actions">
-                          <button
-                            onClick={() => moderateTheme(theme.id, "approved")}
-                          >
-                            {authUser.role === "da" ? "Valider & Noter" : "Transmettre DA"}
-                          </button>
-                          <button
-                            className="ghost"
-                            onClick={() => moderateTheme(theme.id, "rejected")}
-                          >
-                            Rejeter
-                          </button>
-                        </td>
+        {activeTab === "workflow" &&
+          ["teacher", "admin", "da"].includes(authUser.role) && (
+            <div className="content-grid" style={{ marginBottom: "24px" }}>
+              <article className="card table-card">
+                <h3>
+                  Modération des thèmes proposés{" "}
+                  {authUser.role === "da" && "(Validation Finale)"}
+                </h3>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Étudiant</th>
+                        <th>Thème</th>
+                        <th>Actions</th>
                       </tr>
+                    </thead>
+                    <tbody>
+                      {pendingThemes.length === 0 && (
+                        <tr>
+                          <td colSpan="3" className="muted">
+                            Aucun thème en attente.
+                          </td>
+                        </tr>
+                      )}
+                      {pendingThemes.map((theme) => (
+                        <tr key={theme.id}>
+                          <td>{theme.student_name}</td>
+                          <td>{theme.title}</td>
+                          <td className="actions">
+                            <button
+                              onClick={() =>
+                                moderateTheme(theme.id, "approved")
+                              }
+                            >
+                              {authUser.role === "da"
+                                ? "Valider & Noter"
+                                : "Transmettre DA"}
+                            </button>
+                            <button
+                              className="ghost"
+                              onClick={() =>
+                                moderateTheme(theme.id, "rejected")
+                              }
+                            >
+                              Rejeter
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+          )}
+
+        {activeTab === "workflow" &&
+          ["teacher", "admin"].includes(authUser.role) && (
+            <div className="content-grid">
+              <aside
+                className="side-column"
+                style={{
+                  gridColumn: "1 / span 2",
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                }}
+              >
+                <article className="card">
+                  <h3>Lancer analyse de plagiat multi-niveaux</h3>
+                  <p className="muted" style={{ marginBottom: "16px" }}>
+                    Local (Shingle), IA et Web.
+                  </p>
+                  <ul className="quick-actions">
+                    {(overview.documents || []).map((doc) => (
+                      <li key={doc.id}>
+                        <button
+                          className="line-button"
+                          onClick={() => launchAnalysis(doc.id)}
+                        >
+                          {doc.student_name} - {doc.original_name}
+                        </button>
+                      </li>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </article>
-          </div>
-        )}
+                  </ul>
+                </article>
 
-        {["teacher", "admin"].includes(authUser.role) && (
-          <div className="content-grid">
-            <aside className="side-column" style={{ gridColumn: '1 / span 2', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-              <article className="card">
-                <h3>Lancer analyse de plagiat multi-niveaux</h3>
-                <p className="muted" style={{ marginBottom: "16px" }}>Local (Shingle), IA et Web.</p>
-                <ul className="quick-actions">
-                  {(overview.documents || []).map((doc) => (
-                    <li key={doc.id}>
-                      <button
-                        className="line-button"
-                        onClick={() => launchAnalysis(doc.id)}
-                      >
-                        {doc.student_name} - {doc.original_name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </article>
+                <article className="card">
+                  <h3>Consulter rapports</h3>
+                  <ul className="quick-actions">
+                    {reports.map((row) => (
+                      <li key={row.id}>
+                        <button
+                          className="line-button"
+                          onClick={() => openReport(row.id)}
+                        >
+                          Rapport #{row.id} - {row.student_name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              </aside>
+            </div>
+          )}
 
-              <article className="card">
-                <h3>Consulter rapports</h3>
-                <ul className="quick-actions">
-                  {reports.map((row) => (
-                    <li key={row.id}>
-                      <button
-                        className="line-button"
-                        onClick={() => openReport(row.id)}
-                      >
-                        Rapport #{row.id} - {row.student_name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            </aside>
-          </div>
-        )}
-
-        {["da", "var"].includes(authUser.role) && (
+        {activeTab === "workflow" && ["da", "var"].includes(authUser.role) && (
           <div className="content-grid">
             <article className="card table-card">
               <h3>Dossiers à statuer</h3>
@@ -714,7 +827,7 @@ function App() {
           </div>
         )}
 
-        {reportDetails && (
+        {activeTab === "workflow" && reportDetails && (
           <section className="card table-card">
             <h3>Rapport détaillé #{reportDetails.report.id}</h3>
             <p>
@@ -760,6 +873,74 @@ function App() {
                 )}
               </div>
             </div>
+          </section>
+        )}
+
+        {activeTab === "ai" && (
+          <section className="content-grid ai-grid">
+            <article className="card table-card">
+              <h3>Détection IA via Gemini</h3>
+              <p className="muted">
+                Colle un extrait de mémoire (minimum 80 caractères) pour estimer
+                le pourcentage de génération IA.
+              </p>
+              <form className="stack-form" onSubmit={detectAiWithGemini}>
+                <textarea
+                  rows="10"
+                  value={aiInputText}
+                  onChange={(event) => setAiInputText(event.target.value)}
+                  placeholder="Colle ici le texte à analyser..."
+                  minLength={80}
+                  required
+                />
+                <button type="submit" disabled={aiDetectionLoading}>
+                  {aiDetectionLoading
+                    ? "Analyse Gemini..."
+                    : "Lancer la détection IA"}
+                </button>
+              </form>
+            </article>
+
+            <aside className="side-column">
+              <article className="card">
+                <h3>Résultat</h3>
+                {!aiDetectionResult && (
+                  <p className="muted">Aucun résultat pour le moment.</p>
+                )}
+
+                {aiDetectionResult && (
+                  <div className="ai-result">
+                    <div className="ai-gauge">
+                      <div
+                        className="ai-gauge-fill"
+                        style={{
+                          width: `${Math.min(100, Number(aiDetectionResult.ai_probability || 0))}%`,
+                        }}
+                      />
+                    </div>
+                    <p>
+                      <span>Probabilité IA</span>
+                      <strong>
+                        {toPercent(aiDetectionResult.ai_probability)}
+                      </strong>
+                    </p>
+                    <p>
+                      <span>Probabilité humaine</span>
+                      <strong>
+                        {toPercent(aiDetectionResult.human_probability)}
+                      </strong>
+                    </p>
+                    <p>
+                      <span>Modèle</span>
+                      <strong>{aiDetectionResult.model || "Gemini"}</strong>
+                    </p>
+                    <p className="muted" style={{ marginTop: "12px" }}>
+                      {aiDetectionResult.reason}
+                    </p>
+                  </div>
+                )}
+              </article>
+            </aside>
           </section>
         )}
       </main>

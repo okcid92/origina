@@ -178,6 +178,21 @@ class ActivityWorkflowController extends Controller
         return $this->workflow->analyzeDocument($actor, $document, $payload);
     }
 
+    public function detectAiText(Request $request): JsonResponse
+    {
+        $actor = $this->resolveActor($request);
+
+        if (! $actor) {
+            return response()->json(['message' => 'Utilisateur non authentifie. Fournir X-User-Id.'], 401);
+        }
+
+        $payload = $request->validate([
+            'text' => ['required', 'string', 'min:80', 'max:20000'],
+        ]);
+
+        return $this->workflow->detectAiText($actor, $payload['text']);
+    }
+
     public function reportsIndex(Request $request): JsonResponse
     {
         $actor = $this->resolveActor($request);

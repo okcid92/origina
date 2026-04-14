@@ -3,12 +3,17 @@
 namespace App\Services\Workflow;
 
 use App\Models\User;
+use App\Services\Ai\GeminiAiDetectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ActivityWorkflowService
 {
+    public function __construct(private readonly GeminiAiDetectionService $geminiDetector)
+    {
+    }
+
     public function overview(User $actor): JsonResponse
     {
         if ($actor->role === 'student') {
@@ -399,6 +404,32 @@ class ActivityWorkflowService
                 'risk_level' => $riskLevel,
             ],
         ], 201);
+    }
+
+    public function detectAiText(User $actor, string $text): JsonResponse
+    {
+        try {
+            $result = $this->geminiDetector->detectProbability($text);
+        } catch (\Throwable $exception) {
+            return response()->json([
+                'message' => 'Detection IA indisponible pour le moment.',
+                'error' => $exception->getMessage(),
+            ], 502);
+        }
+
+        return response()->json([
+            'message' => 'Detection IA terminee avec Gemini.',
+            'data' => [
+                'ai_probability' => $result['ai_probability'],
+                'human_probability' => round(100 - (float) $result['ai_probability'], 2),
+                'reason' => $result['reason'],
+                'model' => $result['model'],
+                'analyzed_by' => [
+                    'id' => $actor->id,
+                    'role' => $actor->role,
+                ],
+            ],
+        ]);
     }
 
     public function reportsIndex(User $actor): JsonResponse

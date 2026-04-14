@@ -57,6 +57,7 @@ Route::controller(ActivityWorkflowController::class)->group(function (): void {
     Route::post('/documents/upload', 'uploadDocument');
     Route::post('/documents/{document}/auto-test', 'autoTestDocument');
     Route::post('/documents/{document}/analyze', 'analyzeDocument');
+    Route::post('/ai/detect', 'detectAiText');
 
     Route::get('/reports', 'reportsIndex');
     Route::get('/reports/{report}', 'showReport');
